@@ -1,20 +1,15 @@
 #include <string>
 #include <iostream>
-#include <chrono>
+
 #include <zmq.hpp>
 
 #include "command.hpp"
-
-static inline constexpr auto nowTimestamp() noexcept -> uint64_t {
-    namespace ts = std::chrono;
-    return ts::duration_cast<ts::nanoseconds>(ts::steady_clock::now().time_since_epoch()).count();
-}
 
 static inline constexpr void fillHeader(Command& cmd, command_t type)
 {
     cmd.header.size = sizeof(cmd.data);
     cmd.header.type = type;
-    cmd.header.timestamp = nowTimestamp();
+    cmd.header.timestamp = now();
 }
 
 int main()
@@ -47,9 +42,11 @@ int main()
         // wait for reply from server
         zmq::message_t reply{};
         socket.recv(reply, zmq::recv_flags::none);
+        
+        auto ack = static_cast<ACK*>(reply.data());
 
-        std::cout << "Received " << reply.to_string(); 
-        std::cout << " (" << request_num << ")";
+        std::cout << "Received ACK\n"; 
+        std::cout << ack2Str(*ack);
         std::cout << std::endl;
     }
 
